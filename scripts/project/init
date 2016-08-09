@@ -1,0 +1,51 @@
+#!/usr/bin/env python
+# vim: set syntax=python
+
+import argparse
+import os
+import sys
+from string import Template
+
+import common
+
+
+cwd_dirname = os.path.basename( os.getcwd() )
+
+parser = argparse.ArgumentParser( description = 'Initialize project environment.',
+        formatter_class = argparse.ArgumentDefaultsHelpFormatter )
+parser.add_argument( 'name', help = 'project name', nargs='?', default = cwd_dirname )
+parser.add_argument( '--namespace', help = 'default namespace (project name if empty)', default = '' )
+parser.add_argument( '--force', help = 'force (re)initialization', action = 'store_true' )
+
+args = parser.parse_args()
+
+
+# check for existing project settings file
+settings_file_name = 'sts_project.py'
+if not args.force and os.path.exists( settings_file_name ):
+    print( 'Initialization aborted: Found existing project settings file.' )
+    sys.exit()
+
+print( 'Initializing project ' + str( args.name ) + '...' )
+
+# set up directory structure
+include_dir = os.path.join( 'include', args.name )
+src_dir = os.path.join( 'src', args.name )
+res_dir = 'resources'
+
+dirs = [ include_dir, src_dir, res_dir ]
+
+common.makedirs_rec( dirs )
+
+# create settings file
+common.create_file_from_template(
+        settings_file_name,
+        common.template_path( settings_file_name ),
+        {
+            'project_name' : args.name,
+            'include_dir' : include_dir,
+            'src_dir' : src_dir,
+            'default_namespace' : args.namespace if args.namespace != '' else args.name
+        } )
+
+print( 'Initialization complete.' )

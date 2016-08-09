@@ -1,0 +1,49 @@
+#!/usr/bin/env python
+# vim: set syntax=python
+
+import argparse
+import os
+
+import common
+project = common.import_from_path( 'project', 'sts_project.py' )
+
+
+parser = argparse.ArgumentParser(
+        description = 'Create class header and source file.',
+        formatter_class = argparse.ArgumentDefaultsHelpFormatter )
+parser.add_argument( 'name', help = 'class name (e.g. [dirA/dirB/]MyClass)' )
+parser.add_argument( '--namespace', '--ns', help = 'class namespace', default = project.default_namespace )
+
+args = parser.parse_args()
+
+
+# extract class/file/directory names from args.name
+file_dir = os.path.dirname( args.name )
+class_name = os.path.basename( args.name )
+file_base_name = os.path.join( file_dir, class_name.lower() )
+
+include_file = os.path.join( project.include_dir, file_base_name + '.h' )
+src_file = os.path.join( project.src_dir, file_base_name + '.cpp' )
+
+# create header and source file from templates
+if os.path.exists( include_file ):
+    print( 'Cannot create class. Existing file: ' + include_file )
+elif os.path.exists( src_file ):
+    print( 'Cannot create class. Existing file: ' + src_file )
+else:
+    common.create_file_from_template(
+            include_file,
+            common.template_path( 'cpp_class.h' ),
+            {
+                'namespace' : args.namespace,
+                'classname' : class_name
+            } )
+
+    common.create_file_from_template(
+            src_file,
+            common.template_path( 'cpp_class.cpp' ),
+            {
+                'headerfile' : file_base_name + '.h',
+                'namespace' : args.namespace,
+                'classname' : class_name
+            } )
